@@ -77,6 +77,40 @@ public:
         PIXEL_ALIGN_HALF = 1,
         PIXEL_ALIGN_FULL = 2
     };
+    // Note: Values must match to matching NanoVG enums
+    enum CompositeOperation {
+        COMPOSITE_SOURCE_OVER,
+        COMPOSITE_SOURCE_IN,
+        COMPOSITE_SOURCE_OUT,
+        COMPOSITE_ATOP,
+        COMPOSITE_DESTINATION_OVER,
+        COMPOSITE_DESTINATION_IN,
+        COMPOSITE_DESTINATION_OUT,
+        COMPOSITE_DESTINATION_ATOP,
+        COMPOSITE_LIGHTER,
+        COMPOSITE_COPY,
+        COMPOSITE_XOR
+    };
+    enum BlendFactor {
+        BLEND_ZERO = 1<<0,
+        BLEND_ONE = 1<<1,
+        BLEND_SRC_COLOR = 1<<2,
+        BLEND_ONE_MINUS_SRC_COLOR = 1<<3,
+        BLEND_DST_COLOR = 1<<4,
+        BLEND_ONE_MINUS_DST_COLOR = 1<<5,
+        BLEND_SRC_ALPHA = 1<<6,
+        BLEND_ONE_MINUS_SRC_ALPHA = 1<<7,
+        BLEND_DST_ALPHA = 1<<8,
+        BLEND_ONE_MINUS_DST_ALPHA = 1<<9,
+        BLEND_SRC_ALPHA_SATURATE = 1<<10,
+    };
+
+    // *** Frame controls ***
+
+    void beginFrame(float width, float height);
+    void beginFrameAt(float x, float y, float width, float height);
+    void endFrame();
+    void cancelFrame();
 
     // *** State Handling ***
 
@@ -96,6 +130,9 @@ public:
     void setLineCap(LineCap cap);
     void setLineJoin(LineJoin join);
     void setGlobalAlpha(float alpha);
+    void setGlobalCompositeOperation(CompositeOperation operation);
+    void setGlobalCompositeBlendFunc(BlendFactor sourceFactor, BlendFactor destinationFactor);
+    void setGlobalCompositeBlendFuncSeparate(BlendFactor sourceRGB, BlendFactor destinationRGB, BlendFactor sourceAlpha, BlendFactor destinationAlpha);
 
     // *** Transforms ***
 
@@ -185,7 +222,7 @@ public:
     void setAntialias(float antialias);
     void setPixelAlign(PixelAlign align);
     void setPixelAlignText(PixelAlign align);
-    double devicePixelRatio() const;
+    float devicePixelRatio() const;
 
     // ***** Static methods *****
 
@@ -231,10 +268,12 @@ private:
     void enableAntialiasing(bool enable);
     void enableHighQualityRendering(bool enable);
 
+    void drawImageId(int imageId, float x, float y, float width, float height);
+
     void _checkFont();
-    void _checkAlignPixelsAdjust(float *a, float *b = NULL, float *c = NULL, float *d = NULL);
-    void _checkAlignPixels(float *a, float *b = NULL, float *c = NULL, float *d = NULL);
-    void _checkAlignPixelsText(float *a, float *b = NULL);
+    void _checkAlignPixelsAdjust(float *a, float *b = nullptr, float *c = nullptr, float *d = nullptr);
+    void _checkAlignPixels(float *a, float *b = nullptr, float *c = nullptr, float *d = nullptr);
+    void _checkAlignPixelsText(float *a, float *b = nullptr);
     void _checkAlignPixelsAdjustOne(float *a);
 
     // TODO: Consider implementing QNanoDataCache class with methods instead of this
@@ -246,7 +285,7 @@ private:
 
     QNanoPainter::TextAlign m_textAlign;
     QNanoPainter::TextBaseline m_textBaseline;
-    double m_devicePixelRatio;
+    float m_devicePixelRatio;
     bool m_fontSet;
     QNanoPainter::PixelAlign m_pixelAlign;
     QNanoPainter::PixelAlign m_pixelAlignText;

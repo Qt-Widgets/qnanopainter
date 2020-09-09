@@ -13,7 +13,7 @@ class DemoQNanoItem : public QNanoQuickItem
     Q_PROPERTY(int testCount READ testCount WRITE setTestCount NOTIFY testCountChanged)
 
 public:
-    DemoQNanoItem(QQuickItem *parent = 0);
+    DemoQNanoItem(QQuickItem *parent = nullptr);
 
     // Reimplement
     QNanoQuickItemPainter *createItemPainter() const;
@@ -23,10 +23,10 @@ public:
     int testCount() const { return m_testCount; }
 
     void setAnimationTime(const float value) {
-        if (value == m_animationTime)
+        if (qFuzzyCompare(value, m_animationTime))
             return;
         m_animationTime = value;
-        emit animationTimeChanged();
+        Q_EMIT animationTimeChanged();
         update();
     }
 
@@ -34,7 +34,7 @@ public:
         if (value == m_enabledTests)
             return;
         m_enabledTests = value;
-        emit enabledTestsChanged();
+        Q_EMIT enabledTestsChanged();
         update();
     }
 
@@ -42,7 +42,7 @@ public:
         if (value == m_testCount)
             return;
         m_testCount = value;
-        emit testCountChanged();
+        Q_EMIT testCountChanged();
         update();
     }
 

@@ -6,15 +6,18 @@ Item {
 
     property real animationTime: 0
     property real animationSine: 0
+    property bool animatePainting: true
 
     NumberAnimation on animationTime {
         id: animationTimeAnimation
+        running: mainView.animatePainting
         from: 0
         to: 360
         duration: 1000*360
         loops: Animation.Infinite
     }
     SequentialAnimation on animationSine {
+        running: mainView.animatePainting
         loops: Animation.Infinite
         NumberAnimation {
             from: 0
@@ -67,13 +70,18 @@ Item {
         highlightRangeMode: ListView.StrictlyEnforceRange
         maximumFlickVelocity: 10000
         highlightMoveDuration: 2500
-        model: 7
+        model: 8
         delegate: GalleryItem {
             width: listView.width
             height: listView.height
             animationTime: mainView.animationTime
             animationSine: mainView.animationSine
             galleryView: index
+            Connections {
+                // Fixing QNanoPainter issue #22
+                target: listView
+                onContentXChanged: update();
+            }
         }
     }
 }

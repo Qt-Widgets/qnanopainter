@@ -25,6 +25,7 @@
 #include "nanovg/nanovg.h"
 #include "private/qnanodataelement.h"
 #include <QString>
+#include <QOpenGLFramebufferObject>
 #include <QDebug>
 
 class QNanoPainter;
@@ -48,18 +49,21 @@ public:
     QNanoImage();
 
     // Constructs an image with the filename and flags
-    QNanoImage(const QString &filename, ImageFlags flags=0);
-
-    ~QNanoImage();
+    QNanoImage(const QString &filename, ImageFlags flags = nullptr);
 
     // Set the filename of the image
     void setFilename(const QString &filename);
+
+    // Set the framebuffer of the image
+    void setFrameBuffer(const QOpenGLFramebufferObject *fbo);
 
     // Set the flags for image
     void setFlags(ImageFlags flags);
 
     int width() const;
     int height() const;
+
+    static QNanoImage fromFrameBuffer(const QOpenGLFramebufferObject *fbo, ImageFlags flags = QNanoImage::FLIPY);
 
 private:
     friend class QNanoPainter;
@@ -76,6 +80,7 @@ private:
     QNanoPainter *m_parentPainter;
     QNanoDataElement *m_imageData;
     QString m_filename;
+    GLuint m_textureId = 0;
     QNanoImage::ImageFlags m_flags;
     QString m_uniqueKey;
 

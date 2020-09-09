@@ -5,18 +5,7 @@ INCLUDEPATH += $$PWD/
 # Use c++11 features
 CONFIG += c++11
 
-win32  {
-    QT_CONFIG += opengles2 angle
-    CONFIG( debug, debug|release ) {
-        # debug
-        LIBS+= -llibGLESV2d
-    } else {
-        # release
-        LIBS+= -llibGLESV2
-    }
-}
-
-# Enable this to get drawind debug information
+# Enable this to get drawing debug information
 #DEFINES += QNANO_DEBUG
 
 # Enable this to let Qt include OpenGL headers
@@ -25,15 +14,22 @@ DEFINES += QNANO_QT_GL_INCLUDE
 # This will enable GLES3 (disable to force GLES2)
 DEFINES += QNANO_ENABLE_GLES3
 
+# This will enable signalling touch events
+# Can be useful when using view/widget classes directly
+#DEFINES += QNANO_ENABLE_TOUCH_SIGNALS
+
+# This will enable signalling paint events
+# Can be useful when using view/widget classes directly
+#DEFINES += QNANO_ENABLE_PAINT_SIGNALS
+
 equals(QT_MAJOR_VERSION, 5):greaterThan(QT_MINOR_VERSION, 7) {
-    message("Building with Qt at least 5.8 so may enabled QNANO_USE_RENDERNODE")
     # Enable this to use QRenderNode (available since Qt 5.8.0) instead of QQuickFramebufferObject
     #DEFINES += QNANO_USE_RENDERNODE
 }
 
 # Configure the amount of logging in release build
 CONFIG(release, debug|release) {
-    message("QNanoPainter Relase build")
+    message("QNanoPainter Release build")
     #DEFINES += QT_NO_WARNING_OUTPUT
     DEFINES += QT_NO_DEBUG_OUTPUT
     DEFINES += QT_NO_INFO_OUTPUT
@@ -92,9 +88,63 @@ contains(QT, widgets) {
 }
 
 # Note: Due to Angle, windows might use either OpenGL (desktop) or
-#       openGL ES (angle) backend.
-android | ios | windows {
+#       OpenGL ES (angle) backend. Newer Qt versions don't automatically
+#       link with OpenGL ES libraries.
+win32 {
+    equals(QT_MAJOR_VERSION, 5):lessThan(QT_MINOR_VERSION, 14) {
+        CONFIG += windows_with_gles
+        QT_CONFIG += opengles2 angle
+        CONFIG( debug, debug|release ) {
+            # debug
+            LIBS+= -llibGLESv2d
+        } else {
+            # release
+            LIBS+= -llibGLESV2
+        }
+    }
+}
+
+# When building for embedded devices you can define manually which
+# backends are supported
+#DEFINES += QNANO_BUILD_GLES_BACKENDS
+#DEFINES += QNANO_BUILD_GL_BACKENDS
+
+# Alternatively, trying to autodetect suitable backeds based on Qt configuration
+!contains(DEFINES, QNANO_BUILD_GL_BACKENDS) : !contains(DEFINES, QNANO_BUILD_GLES_BACKENDS) {
+    equals(QT_ARCH,"wasm") {
+        # WebAssembly uses GLES
+        DEFINES += QNANO_BUILD_GLES_BACKENDS
+    }
+}
+
+!contains(DEFINES, QNANO_BUILD_GL_BACKENDS) : !contains(DEFINES, QNANO_BUILD_GLES_BACKENDS) {
+    qtConfig(opengles2) | qtConfig(opengles3) {
+        DEFINES += QNANO_BUILD_GLES_BACKENDS
+    } else {
+        DEFINES += QNANO_BUILD_GL_BACKENDS
+    }
+    CONFIG(windows_with_gles) {
+        DEFINES += QNANO_BUILD_GLES_BACKENDS
+    }
+}
+
+# Or finally selecting suitable backeds for different environments.
+!contains(DEFINES, QNANO_BUILD_GL_BACKENDS) : !contains(DEFINES, QNANO_BUILD_GLES_BACKENDS) {
+    android | ios | linux-rasp-* | windows:wince | CONFIG(windows_with_gles) {
+        DEFINES += QNANO_BUILD_GLES_BACKENDS
+    }
+    !contains(DEFINES , QNANO_BUILD_GLES_BACKENDS) | windows:!wince {
+        DEFINES += QNANO_BUILD_GL_BACKENDS
+    }
+}
+
+!contains(DEFINES, QNANO_BUILD_GL_BACKENDS) : !contains(DEFINES, QNANO_BUILD_GLES_BACKENDS) {
+    error("No QNanoPainter backends defined. Please modify libqnanopainter/include.pri")
+}
+
+contains(DEFINES , QNANO_BUILD_GLES_BACKENDS) {
     message("Including QNanoPainter OpenGL ES backends")
+
 HEADERS += \
     $$PWD/private/qnanobackendgles2.h \
     $$PWD/private/qnanobackendgles3.h
@@ -103,7 +153,7 @@ SOURCES +=  \
     $$PWD/private/qnanobackendgles3.cpp
 }
 
-osx | linux:!android | windows {
+contains(DEFINES , QNANO_BUILD_GL_BACKENDS) {
     message("Including QNanoPainter OpenGL backends")
 HEADERS += \
     $$PWD/private/qnanobackendgl2.h \
